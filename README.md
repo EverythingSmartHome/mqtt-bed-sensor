@@ -12,7 +12,9 @@ Full guide available [here](https://everythingsmarthome.co.uk)
 - ESP8266 based board with 5v output (Wemos D1 Mini etc)
 
 ### Libraries
-- [HX711](https://github.com/bogde/HX711) Library - available through Arduino IDE library manager
+- [HX711](https://github.com/bogde/HX711) library - available through Arduino IDE library manager
+- [PubSubClient](https://github.com/knolleary/pubsubclient) library - available through Arduino IDE library manager
+- [ESP boards](https://github.com/esp8266/Arduino)
 
 ## Use case
 This was built specifically with bed occupancy in mind so that automations can be triggered when in bed such as switching lights off, locking doors, setting alarms etc etc using Home Assistant. I found that load cells seem to "drift" a little over time, with this in mind a remote tare function was built in so that I can issue a tare command over MQTT which will reset it to zero without having to physically reset the device everytime.
@@ -28,3 +30,6 @@ This was built specifically with bed occupancy in mind so that automations can b
 2. Fill in all variables in config.h file
 3. Observe output on serial monitor, place known weight on scales and ensure read-out is correct.
 4. Once happy, unplug and plug into main power supply and enjoy!
+
+## Credits
+The original idea for this has been adapted from Zack over at [Self Hosted Home](https://selfhostedhome.com/diy-bed-presence-detection-home-assistant/)'s original build, so big thanks to him!
