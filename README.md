@@ -31,5 +31,15 @@ This was built specifically with bed occupancy in mind so that automations can b
 3. Observe output on serial monitor, place known weight on scales and ensure read-out is correct.
 4. Once happy, unplug and plug into main power supply and enjoy!
 
+## Need help?
+Join the community on discord:
+* [Discord](https://discord.gg/Bgfvy2f)
+
+## Support
+If you would like to support this project and many more like it, please consider supporting me so I can keep delivering more projects just like this one:
+
+* [Patreon](https://www.patreon.com/everythingsmarthome)
+* [Buy Me A Coffee!](https://www.buymeacoffee.com/EverySmartHome)
+
 ## Credits
 The original idea for this has been adapted from Zack over at [Self Hosted Home](https://selfhostedhome.com/diy-bed-presence-detection-home-assistant/)'s original build, so big thanks to him!
