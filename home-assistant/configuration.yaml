@@ -1,0 +1,36 @@
+sensor:  
+  - platform: mqtt
+    name: "Bed"
+    state_topic: "home/bedroom/bed"
+    unit_of_measurement: "kg"
+  - platform: mqtt
+    name: "Bed Raw"
+    state_topic: "home/bedroom/bed/raw"
+    unit_of_measurement: "raw"
+  - platform: template
+    sensors:
+      num_in_master_bed:
+        friendly_name: "Number of People in Bed"
+        unit_of_measurement: "people"
+        value_template: >-
+          {% if is_state('binary_sensor.person_1_in_bed', 'on') and is_state('binary_sensor.person_2_in_bed', 'on') %}
+              2
+          {% elif is_state('binary_sensor.person_1_in_bed', 'on') or is_state('binary_sensor.person_2_in_bed', 'on') %}
+              1
+          {% else %}
+              0
+          {% endif %}
+       
+binary_sensor:
+  - platform: template
+    sensors:
+      person_1_in_bed:
+        friendly_name: "Person 1 in Bed"
+        value_template: >
+          {{ states('sensor.bed')|float >= 60 }}
+      person_2_in_bed:
+        friendly_name: "Person 2 in Bed"
+        value_template: >
+          {{ states('sensor.bed')|float > 20
+            and (states('sensor.bed')|float < 60 
+               or states('sensor.bed')|float >= 90 )}}
