@@ -76,9 +76,9 @@ void loop() {
 void reconnect() {
   while (!client.connected()) {       // Loop until connected to MQTT server
     Serial.print("Attempting MQTT connection...");
-    if (client.connect(HOSTNAME, mqtt_username, mqtt_password)) {       //Connect to MQTT server
+    if (client.connect(HOSTNAME, mqtt_username, mqtt_password, AVAILABILITY_TOPIC, 2, true, "offline")) {       //Connect to MQTT server
       Serial.println("connected"); 
-      client.publish(AVAILABILITY_TOPIC, "online");         // Once connected, publish online to the availability topic
+      client.publish(AVAILABILITY_TOPIC, "online", true);         // Once connected, publish online to the availability topic
       client.subscribe(TARE_TOPIC);       //Subscribe to tare topic for remote tare
     } else {
       Serial.print("failed, rc=");
