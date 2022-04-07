@@ -1,0 +1,13 @@
+{
+  "/index.html": 
+    {
+      "@SSID@": "wifi_ssid",
+      "@WIFIPWD@": "wifi_password",
+      "@MQTTSVR@": "mqtt_host",
+      "@MQTTPORT@": "mqtt_port",
+      "@MQTTPWD@": "mqtt_password",
+      "@SCID@": "device_id",
+      "@SCTOPIC@": "base_topic",
+      "@SCCALIB@": "calibration_factor"
+    }
+}

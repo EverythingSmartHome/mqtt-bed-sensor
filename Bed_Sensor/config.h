@@ -1,4 +1,4 @@
-
+/*
 // Wifi Settings
 #define SSID                          "Your Wifi SSID Here"
 #define PASSWORD                      "Your Wifi Password Here"
@@ -12,6 +12,15 @@
 #define TARE_TOPIC                    "home/bedroom/bed/tare"
 #define mqtt_username                 "mqtt_username"
 #define mqtt_password                 "mqtt_password"
+*/
+
+// MQTT Settings
+#define AVAILABILITY_SUFFIX           "available"
+#define RAW_SUFFIX                    "raw"
+#define TARE_SUFFIX                   "tare"
+
+// File where all configuration is stored
+#define CONFIG_FILE_NAME        "/config.json"
 
 // HX711 Pins
 const int LOADCELL_DOUT_PIN = 2; // Remember these are ESP GPIO pins, they are not the physical pins on the board.
