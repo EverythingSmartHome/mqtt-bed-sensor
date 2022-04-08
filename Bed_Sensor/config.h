@@ -15,9 +15,10 @@
 */
 
 // MQTT Settings
-#define AVAILABILITY_SUFFIX           "available"
+#define AVAILABILITY_SUFFIX           "status"
 #define RAW_SUFFIX                    "raw"
 #define TARE_SUFFIX                   "tare"
+#define CALIBRATE_SUFFIX              "calibrate"
 
 // File where all configuration is stored
 #define CONFIG_FILE_NAME        "/config.json"

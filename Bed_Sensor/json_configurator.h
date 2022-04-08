@@ -1,6 +1,7 @@
 #ifndef JSON_CONFIGURATOR_H
 #define JSON_CONFIGURATOR_H
 #include <ArduinoJson.h>
+#include <vector>
 
 #if (ESP32)
 #include <LITTLEFS.h>
@@ -20,6 +21,7 @@ class JSONConfigurator {
   void set_item(String p_key, String p_value);
   bool changed(String p_key);
   bool config_change();
+  std::vector<String> changed_items();
   void save_configuration();
   void onConfigChange(void (*callback)());
 
@@ -38,6 +40,7 @@ class JSONConfigurator {
   const char* defaults_file = "/defaults.json";
 
   bool defaults_available;
+  std::vector<String> _changed_items;
 
   void (* config_change_callback)();
 
@@ -45,9 +48,13 @@ class JSONConfigurator {
   void apply_defaults();
   void print_config(JsonDocument& p_doc);
   void load_configuration();
+  void clear_changes();
+  void flag_changes();
 };
 
 JSONConfigurator::JSONConfigurator(char* p_filename) {
+  config_change_callback = NULL;
+
   Serial.print("Filename: ");
   Serial.println(p_filename);
 
@@ -90,6 +97,10 @@ bool JSONConfigurator::config_change() {
   return (configuration != original_configuration);
 }
 
+std::vector<String> JSONConfigurator::changed_items() {
+  return _changed_items;
+}
+
 void JSONConfigurator::save_configuration() {
   Serial.println("Saving JSON configuration");
   bool trigger_callback = false;
@@ -112,7 +123,8 @@ void JSONConfigurator::save_configuration() {
 
   if ((config_change()) && (config_change_callback != NULL))
     trigger_callback = true;
-  
+
+  flag_changes();
   original_configuration = configuration;
 
   if (trigger_callback)
@@ -176,5 +188,16 @@ void JSONConfigurator::load_configuration() {
     save_configuration();
     
   print_config(configuration);    
+}
+
+void JSONConfigurator::flag_changes() {
+  JsonObject json_obj = configuration.as<JsonObject>();
+  _changed_items.clear();
+  
+  for (JsonPair param : json_obj) {
+    if (strcmp(param.value().as<char*>(), original_configuration[param.key().c_str()].as<char*>()) != 0) {
+      _changed_items.push_back(String(param.key().c_str()));        
+    }
+  }    
 }
 #endif

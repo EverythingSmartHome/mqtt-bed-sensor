@@ -101,8 +101,6 @@ WebConfigurator::WebConfigurator(JSONConfigurator *p_configuration, String p_wif
   Serial.println("Initializing web server");
   server = new WiFiWebServer(p_port);
 
-  config_change_callback = NULL;
-
   substitutions_file = p_substitutions_file;
   if (substitutions_file.length() > 0)
     load_substitutions();
@@ -218,8 +216,6 @@ void WebConfigurator::update_callback() {
 
 void WebConfigurator::handleUpdate()
 {
-  bool reconnectWifi = false;
-  
   if (server->method() != HTTP_POST)
   {
     server->send(405, F("text/plain"), F("Method Not Allowed"));
@@ -242,17 +238,12 @@ void WebConfigurator::handleUpdate()
       Serial.println("Wifi changed");
       #endif
 
-      reconnectWifi = true;
+      set_wifi_info();
+      connect_wifi();      
     }
 
     configuration->save_configuration();
 
-    if (reconnectWifi)
-    {
-      set_wifi_info();
-      connect_wifi();      
-    }
-      
     handleRoot();
   }
 }

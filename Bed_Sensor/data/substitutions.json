@@ -5,6 +5,7 @@
       "@WIFIPWD@": "wifi_password",
       "@MQTTSVR@": "mqtt_host",
       "@MQTTPORT@": "mqtt_port",
+      "@MQTTUSR@": "mqtt_user",
       "@MQTTPWD@": "mqtt_password",
       "@SCID@": "device_id",
       "@SCTOPIC@": "base_topic",
