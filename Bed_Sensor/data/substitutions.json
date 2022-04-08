@@ -8,6 +8,7 @@
       "@MQTTUSR@": "mqtt_user",
       "@MQTTPWD@": "mqtt_password",
       "@SCID@": "device_id",
+      "@SCNAME@": "device_name",
       "@SCTOPIC@": "base_topic",
       "@SCCALIB@": "calibration_factor"
     }

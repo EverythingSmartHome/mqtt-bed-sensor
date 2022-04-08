@@ -1,13 +1,8 @@
 #ifndef JSON_CONFIGURATOR_H
 #define JSON_CONFIGURATOR_H
-#include <ArduinoJson.h>
 #include <vector>
-
-#if (ESP32)
-#include <LITTLEFS.h>
-#else
+#include <ArduinoJson.h>
 #include <LittleFS.h>
-#endif
 
 #ifndef JSON_DOC_SIZE
 #define JSON_DOC_SIZE  1024
@@ -26,11 +21,7 @@ class JSONConfigurator {
   void onConfigChange(void (*callback)());
 
   private:
-  #if (ESP32)
-  fs::LITTLEFSFS lfs = LITTLEFS;
-  #else
-  fs::FS lfs = LittleFS;
-  #endif
+  fs::FS lfs = LittleFS; // For future compatibility with ESP32
 
   StaticJsonDocument<JSON_DOC_SIZE> configuration;
   StaticJsonDocument<JSON_DOC_SIZE> original_configuration;

@@ -5,11 +5,7 @@
 #include "json_configurator.h"
 #include <ArduinoJson.h>
 
-#if (ESP32)
-#include <LITTLEFS.h>
-#else
 #include <LittleFS.h>
-#endif
 
 #ifndef JSON_DOC_SIZE
 #define JSON_DOC_SIZE  1024
@@ -45,11 +41,7 @@ class WebConfigurator {
   
   private:
 
-  #if (ESP32)
-  fs::LITTLEFSFS *lfs;
-  #else
-  fs::FS *lfs;
-  #endif  
+  fs::FS *lfs; // For future compatibilty with ESP32
   
   int status;     // the Wifi radio's status
   int reqCount;                // number of requests received
@@ -81,11 +73,7 @@ class WebConfigurator {
 WebConfigurator::WebConfigurator(JSONConfigurator *p_configuration, String p_wifi_ssid, String p_wifi_password, int p_port, String p_substitutions_file) {
   Serial.println("Initializing web configurator");
 
-  #if (ESP32)
-  lfs = &LITTLEFS;
-  #else
   lfs = &LittleFS;
-  #endif  
 
   status = WL_IDLE_STATUS;
   reqCount = 0;                // number of requests received
@@ -108,15 +96,6 @@ WebConfigurator::WebConfigurator(JSONConfigurator *p_configuration, String p_wif
 
 void WebConfigurator::connect_wifi() {
   Serial.println("Initializing wifi connection");
-#if !(ESP32 || ESP8266)  
-  // check for the presence of the shield
-  if (WiFi.status() == WL_NO_SHIELD)
-  {
-    Serial.println(F("WiFi shield not present"));
-    // don't continue
-    while (true);
-  }
-#endif
 
   if (status == WL_CONNECTED)
   {
