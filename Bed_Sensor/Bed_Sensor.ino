@@ -32,10 +32,7 @@ void set_topics() {
   strcpy(base_topic, configuration->get_item("base_topic")); // Define device base topic from configuration
   
   create_topic(base_topic, AVAILABILITY_SUFFIX, &availability_topic); //Set availability topic
-
-  state_topic = new char[strlen(base_topic) + 1];
-  strcpy(state_topic, base_topic); // State topic is the same as base topic
-  
+  create_topic(base_topic, WEIGHT_SUFFIX, &weight_state_topic); // Topic to publish weight reading
   create_topic(base_topic, RAW_SUFFIX, &raw_state_topic); // Topic to publish raw scale reading
   create_topic(base_topic, TARE_SUFFIX, &tare_topic); // Topic to subscribe to for taring scale
   create_topic(base_topic, CALIBRATE_SUFFIX, &calibrate_topic); // Topic to publish the scale calibration factor
@@ -180,7 +177,9 @@ void publish_config() {
   config_message += device_id;
   config_message += "_weight\", \"avty_t\": \"~/";
   config_message += AVAILABILITY_SUFFIX;
-  config_message += "\", \"stat_t\": \"~/weight\", \"unit_of_measurement\": \"kg\", \"icon\": \"mdi:scale\", \"entity_category\": \"diagnostic\" }";  
+  config_message += "\", \"stat_t\": \"~/";
+  config_message += WEIGHT_SUFFIX;
+  config_message += "\", \"unit_of_measurement\": \"kg\", \"icon\": \"mdi:scale\", \"entity_category\": \"diagnostic\" }";  
   
   result = client.publish(base_config_topic.c_str(), config_message.c_str(), true);         // Once connected, publish online to the availability topic  
   if (!result) {
@@ -204,7 +203,9 @@ void publish_config() {
   config_message += device_id;
   config_message += "_raw_weight\", \"avty_t\": \"~/";
   config_message += AVAILABILITY_SUFFIX;
-  config_message += "\", \"stat_t\": \"~/raw_weight\", \"icon\": \"mdi:numeric\", \"entity_category\": \"diagnostic\" }";  
+  config_message += "\", \"stat_t\": \"~/";
+  config_message += RAW_SUFFIX;
+  config_message += "\", \"icon\": \"mdi:numeric\", \"entity_category\": \"diagnostic\" }";  
   
   result = client.publish(base_config_topic.c_str(), config_message.c_str(), true);         // Once connected, publish online to the availability topic  
   if (!result) {
@@ -241,6 +242,35 @@ void publish_config() {
     Serial.print("Base configuration topic used: ");
     Serial.println(base_config_topic);
   }
+
+
+  // Tare button
+  base_config_topic = "homeassistant/button/";
+  base_config_topic += device_id;
+  base_config_topic += "/tare/config";
+  
+  config_message = "{ \"dev\": { \"ids\": [ \"";
+  config_message += device_id;
+  config_message += "\" ], \"name\": \"";
+  config_message += device_name;
+  config_message += "\" }, \"~\": \"";
+  config_message += base_topic;
+  config_message += "\", \"name\": \"Tare scale\", \"uniq_id\": \"";
+  config_message += device_id;
+  config_message += "_tare_scale\", \"avty_t\": \"~/";
+  config_message += AVAILABILITY_SUFFIX;
+  config_message += "\", \"stat_t\": \"~/";
+  config_message += AVAILABILITY_SUFFIX;
+  config_message += "\", \"cmd_t\": \"~/";
+  config_message += TARE_SUFFIX;
+  config_message += "\", \"icon\": \"mdi:numeric-0-circle-outline\", \"entity_category\": \"diagnostic\" }";  
+  
+  result = client.publish(base_config_topic.c_str(), config_message.c_str(), true);         // Once connected, publish online to the availability topic  
+  if (!result) {
+    Serial.println("Failed to publish auto discovery configuration");
+    Serial.print("Base configuration topic used: ");
+    Serial.println(base_config_topic);
+  }  
 
 
   // Reset button
@@ -332,8 +362,23 @@ void loop() {
   if (!client.connected()) 
     connectMqtt();
 
-  if (scale_available) {
+  unsigned long time_passed = millis() - last_read;
+  
+  if( (scale_available) && (time_passed >= SCALE_READ_INTERVAL) ) {
     Serial.print("Reading: ");            // Prints weight readings in .2 decimal kg units.
+    scale.power_up();
+
+    // Tare scale if tare command was received
+    if (do_tare) {
+      Serial.println("starting tare...");
+      scale.wait_ready();
+      scale.set_scale();
+      scale.tare();       //Reset scale to zero
+      Serial.println("Scale reset to zero");      
+
+      do_tare = false;
+    }
+    
     scale.wait_ready(); // Wait till scale is ready, this is blocking if your hardware is not connected properly.
     scale.set_scale(calibration_factor);  // Sets the calibration factor.
     scale.wait_ready();
@@ -355,15 +400,14 @@ void loop() {
     if (client.connected()) {
       String value_str = String(reading);
       String value_raw_str = String(raw);
-      client.publish(state_topic, (char *)value_str.c_str());               // Publish weight to the STATE topic
+      client.publish(weight_state_topic, (char *)value_str.c_str());               // Publish weight to the STATE topic
       client.publish(raw_state_topic, (char *)value_raw_str.c_str());       // Publish raw value to the RAW topic
     
       client.loop();          // MQTT task loop
     }
 
     scale.power_down();    // Puts the scale to sleep mode for 3 seconds. I had issues getting readings if I did not do this
-    delay(3000);
-    scale.power_up();
+    last_read = millis();
   }
   else {
     // Still execute MQTT loop
@@ -378,11 +422,7 @@ void loop() {
 void callback(char* topic, byte* payload, unsigned int length) {
   if (strcmp(topic, tare_topic) == 0) { //Tare the scale
     if (scale_available) {
-      Serial.println("starting tare...");
-      scale.wait_ready();
-      scale.set_scale();
-      scale.tare();       //Reset scale to zero
-      Serial.println("Scale reset to zero");
+      do_tare = true;
     }
   }
   else if (strcmp(topic, calibrate_topic_set) == 0) { // Change calibration factor
