@@ -1,13 +1,16 @@
 // MQTT Settings
 #define AVAILABILITY_SUFFIX           "status"
-#define RAW_SUFFIX                    "raw"
-#define WEIGHT_SUFFIX                 "weight"
 #define TARE_SUFFIX                   "tare"
 #define CALIBRATE_SUFFIX              "calibrate"
 #define RESTART_SUFFIX                "restart"
+#define ATTRIBUTES_SUFFIX             "info"
+
+#define MQTT_BUFFER_SIZE              1024  // Maximum size of MQTT messages. Increase this value if messages are not going through
 
 // File where all configuration is stored
 #define CONFIG_FILE_NAME        "/config.json"
+
+#define GITHUB_SOURCE           "https://github.com/EverythingSmartHome/mqtt-bed-sensor"
 
 // HX711 Pins
 const int LOADCELL_DOUT_PIN = 2; // Remember these are ESP GPIO pins, they are not the physical pins on the board.
@@ -32,9 +35,7 @@ PubSubClient client(wifiClient);      // Initiate PubSubClient library
 // Define MQTT topics
 char* base_topic;
 char* availability_topic;
-char* weight_state_topic;
-char* raw_state_topic;
 char* tare_topic;
 char* calibrate_topic;
-char* calibrate_topic_set;
 char* restart_topic;
+char* attributes_topic;

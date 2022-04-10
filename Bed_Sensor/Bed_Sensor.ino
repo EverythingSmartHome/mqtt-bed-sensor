@@ -32,11 +32,9 @@ void set_topics() {
   strcpy(base_topic, configuration->get_item("base_topic")); // Define device base topic from configuration
   
   create_topic(base_topic, AVAILABILITY_SUFFIX, &availability_topic); //Set availability topic
-  create_topic(base_topic, WEIGHT_SUFFIX, &weight_state_topic); // Topic to publish weight reading
-  create_topic(base_topic, RAW_SUFFIX, &raw_state_topic); // Topic to publish raw scale reading
+  create_topic(base_topic, ATTRIBUTES_SUFFIX, &attributes_topic); // Topic to publish attributes
   create_topic(base_topic, TARE_SUFFIX, &tare_topic); // Topic to subscribe to for taring scale
   create_topic(base_topic, CALIBRATE_SUFFIX, &calibrate_topic); // Topic to publish the scale calibration factor
-  calibrate_topic_set = new char[strlen(calibrate_topic) + 5]; // Topic to subscribe to update calibration factor
   create_topic(base_topic, RESTART_SUFFIX, &restart_topic); // Topic to subscribe to reboot the ESP device
 }
 
@@ -67,17 +65,12 @@ void handleConfigurationChange() {
       set_topics();
 
     //Reconnect to MQTT server. Wifi connection is handled by WebConfigurator
-    if (connectivity_changes)
+    if ((connectivity_changes) || (device_changes))
       connectMqtt();
 
     // Update configuration parameters
-    if (operation_changes) {
-      calibration_factor = atoi(configuration->get_item("calibration_factor"));
-
-      if (strlen(calibrate_topic) > 0) {
-        client.publish(calibrate_topic, configuration->get_item("calibration_factor"));
-      }
-    }
+    if (operation_changes) 
+      calibration_factor = atoi(configuration->get_item("calibration_factor"));      
   }
 }
 
@@ -95,28 +88,25 @@ void connectMqtt() {
     Serial.println(port);
     
     client.setServer(configuration->get_item("mqtt_host"), port);  // Set MQTT server and port number
-    client.setBufferSize(1024);                                    // Set size of the MQTT publish buffer
+    client.setBufferSize(MQTT_BUFFER_SIZE);                        // Set size of the MQTT publish buffer
     client.setCallback(callback);                                  // Set callback address, this is used for remote tare   
 
-    if ((strlen(configuration->get_item("device_id")) > 0) && (strlen(configuration->get_item("mqtt_user")) > 0) && (strlen(availability_topic) >0)) {
+    if ((strlen(configuration->get_item("device_id")) > 0) && (strlen(configuration->get_item("mqtt_user")) > 0) && (strlen(availability_topic) > 0)) {
       Serial.print("Attempting MQTT connection...");
-      if (client.connect(configuration->get_item("device_id"), configuration->get_item("mqtt_user"), configuration->get_item("mqtt_password"), availability_topic, 2, true, "offline")) {       //Connect to MQTT server
+      if (client.connect(configuration->get_item("device_id"), configuration->get_item("mqtt_user"), configuration->get_item("mqtt_password"), availability_topic, 2, true, "offline")) {       //Connect to MQTT server and set LWT message
         Serial.println("connected"); 
         
         publish_config(); // Publish Home Assistant auto discovery items
 
         // Publish status 
         client.publish(availability_topic, "online", true);         // Once connected, publish online to the availability topic
-
-        char _calibration[sizeof(int) + 1];
-        itoa(calibration_factor, _calibration, 10);
-        client.publish(calibrate_topic, _calibration, true);
+        publish_attributes(NULL, NULL);
 
         if (strlen(tare_topic) > 0)
           client.subscribe(tare_topic);       //Subscribe to tare topic for remote tare
 
-        if (strlen(calibrate_topic_set) > 0)
-          client.subscribe(calibrate_topic_set); //Subscribe to calibrate topic to adjust calibration
+        if (strlen(calibrate_topic) > 0)
+          client.subscribe(calibrate_topic); //Subscribe to calibrate topic to adjust calibration
 
         if (strlen(restart_topic) >0)
           client.subscribe(restart_topic); // Subscribe to restart topic to reboot device
@@ -136,23 +126,30 @@ void publish_config() {
   bool result;
   String device_id = configuration->get_item("device_id");
   String device_name = (strlen(configuration->get_item("device_name")) > 0) ? configuration->get_item("device_name") : configuration->get_item("device_id");
+  String device = "\"dev\": { \"ids\": [ \"";
+  device += device_id;
+  device += "\" ], \"name\": \"";
+  device += device_name;
+  device += "\", \"cu\": \"http://";
+  device += server->ip();
+  device += "\", \"mf\": \"Open source\", \"mdl\": \"Custom\" }";
 
   // Main state device
   base_config_topic = "homeassistant/binary_sensor/";
   base_config_topic += device_id;
   base_config_topic += "/connectivity/config";
   
-  config_message = "{ \"dev\": { \"ids\": [ \"";
-  config_message += device_id;
-  config_message += "\" ], \"name\": \"";
-  config_message += device_name;
-  config_message += "\" }, \"~\": \"";
+  config_message = "{ ";
+  config_message += device;
+  config_message += ", \"~\": \"";
   config_message += base_topic;
   config_message += "\", \"name\": \"Status\", \"uniq_id\": \"";
   config_message += device_id;
   config_message += "_connectivity\", \"stat_t\": \"~/";
   config_message += AVAILABILITY_SUFFIX;
-  config_message += "\", \"dev_cla\": \"connectivity\", \"pl_on\": \"online\", \"pl_off\": \"offline\"  }";  
+  config_message += "\", \"dev_cla\": \"connectivity\", \"pl_on\": \"online\", \"pl_off\": \"offline\", \"json_attr_t\": \"~/";
+  config_message += ATTRIBUTES_SUFFIX;
+  config_message += "\" }";  
   
   result = client.publish(base_config_topic.c_str(), config_message.c_str(), true);         // Once connected, publish online to the availability topic  
   if (!result) {
@@ -167,19 +164,19 @@ void publish_config() {
   base_config_topic += device_id;
   base_config_topic += "/weight/config";
   
-  config_message = "{ \"dev\": { \"ids\": [ \"";
-  config_message += device_id;
-  config_message += "\" ], \"name\": \"";
-  config_message += device_name;
-  config_message += "\" }, \"~\": \"";
+  config_message = "{ ";
+  config_message += device;
+  config_message += ", \"~\": \"";
   config_message += base_topic;
   config_message += "\", \"name\": \"Weight\", \"uniq_id\": \"";
   config_message += device_id;
   config_message += "_weight\", \"avty_t\": \"~/";
   config_message += AVAILABILITY_SUFFIX;
   config_message += "\", \"stat_t\": \"~/";
-  config_message += WEIGHT_SUFFIX;
-  config_message += "\", \"unit_of_measurement\": \"kg\", \"icon\": \"mdi:scale\", \"entity_category\": \"diagnostic\" }";  
+  config_message += ATTRIBUTES_SUFFIX;
+  config_message += "\", \"json_attr_t\": \"~/";
+  config_message += ATTRIBUTES_SUFFIX;
+  config_message += "\", \"val_tpl:\": \"'{{ value_json.weight }}'\', \"unit_of_measurement\": \"kg\", \"icon\": \"mdi:scale\", \"entity_category\": \"diagnostic\" }";  
   
   result = client.publish(base_config_topic.c_str(), config_message.c_str(), true);         // Once connected, publish online to the availability topic  
   if (!result) {
@@ -193,19 +190,19 @@ void publish_config() {
   base_config_topic += device_id;
   base_config_topic += "/raw_weight/config";
   
-  config_message = "{ \"dev\": { \"ids\": [ \"";
-  config_message += device_id;
-  config_message += "\" ], \"name\": \"";
-  config_message += device_name;
-  config_message += "\" }, \"~\": \"";
+  config_message = "{ ";
+  config_message += device;
+  config_message += ", \"~\": \"";
   config_message += base_topic;
   config_message += "\", \"name\": \"Raw weight\", \"uniq_id\": \"";
   config_message += device_id;
   config_message += "_raw_weight\", \"avty_t\": \"~/";
   config_message += AVAILABILITY_SUFFIX;
   config_message += "\", \"stat_t\": \"~/";
-  config_message += RAW_SUFFIX;
-  config_message += "\", \"icon\": \"mdi:numeric\", \"entity_category\": \"diagnostic\" }";  
+  config_message += ATTRIBUTES_SUFFIX;
+  config_message += "\", \"json_attr_t\": \"~/";
+  config_message += ATTRIBUTES_SUFFIX;
+  config_message += "\", \"val_tpl\": \"'{{ value_json.raw }}'\", \"icon\": \"mdi:numeric\", \"entity_category\": \"diagnostic\" }";  
   
   result = client.publish(base_config_topic.c_str(), config_message.c_str(), true);         // Once connected, publish online to the availability topic  
   if (!result) {
@@ -220,21 +217,21 @@ void publish_config() {
   base_config_topic += device_id;
   base_config_topic += "/calibration_factor/config";
   
-  config_message = "{ \"dev\": { \"ids\": [ \"";
-  config_message += device_id;
-  config_message += "\" ], \"name\": \"";
-  config_message += device_name;
-  config_message += "\" }, \"~\": \"";
+  config_message = "{ ";
+  config_message += device;
+  config_message += ", \"~\": \"";
   config_message += base_topic;
   config_message += "\", \"name\": \"Calibration factor\", \"uniq_id\": \"";
   config_message += device_id;
   config_message += "_calibration_factor\", \"avty_t\": \"~/";
   config_message += AVAILABILITY_SUFFIX;
   config_message += "\", \"stat_t\": \"~/";
+  config_message += ATTRIBUTES_SUFFIX;
+  config_message += "\", \"json_attr_t\": \"~/";
+  config_message += ATTRIBUTES_SUFFIX;
+  config_message += "\", \"val_tpl\": \"'{{ value_json.calibration_factor }}'\", \"cmd_t\": \"~/";
   config_message += CALIBRATE_SUFFIX;
-  config_message += "\", \"cmd_t\": \"~/";
-  config_message += CALIBRATE_SUFFIX;
-  config_message += "/set\", \"icon\": \"mdi:wrench\", \"entity_category\": \"config\", \"min\": 0, \"max\": 65535 }";  
+  config_message += "\", \"icon\": \"mdi:wrench\", \"entity_category\": \"config\", \"min\": 0, \"max\": 65535 }";  
   
   result = client.publish(base_config_topic.c_str(), config_message.c_str(), true);         // Once connected, publish online to the availability topic  
   if (!result) {
@@ -249,11 +246,9 @@ void publish_config() {
   base_config_topic += device_id;
   base_config_topic += "/tare/config";
   
-  config_message = "{ \"dev\": { \"ids\": [ \"";
-  config_message += device_id;
-  config_message += "\" ], \"name\": \"";
-  config_message += device_name;
-  config_message += "\" }, \"~\": \"";
+  config_message = "{ ";
+  config_message += device;
+  config_message += ", \"~\": \"";
   config_message += base_topic;
   config_message += "\", \"name\": \"Tare scale\", \"uniq_id\": \"";
   config_message += device_id;
@@ -278,11 +273,9 @@ void publish_config() {
   base_config_topic += device_id;
   base_config_topic += "/restart/config";
   
-  config_message = "{ \"dev\": { \"ids\": [ \"";
-  config_message += device_id;
-  config_message += "\" ], \"name\": \"";
-  config_message += device_name;
-  config_message += "\" }, \"~\": \"";
+  config_message = "{ ";
+  config_message += device;
+  config_message += ", \"~\": \"";
   config_message += base_topic;
   config_message += "\", \"name\": \"Restart device\", \"uniq_id\": \"";
   config_message += device_id;
@@ -363,7 +356,8 @@ void loop() {
     connectMqtt();
 
   unsigned long time_passed = millis() - last_read;
-  
+
+  // Scale needs to be available and there needs to be at least 3 seconds that passed before it can be brought back up
   if( (scale_available) && (time_passed >= SCALE_READ_INTERVAL) ) {
     Serial.print("Reading: ");            // Prints weight readings in .2 decimal kg units.
     scale.power_up();
@@ -400,8 +394,9 @@ void loop() {
     if (client.connected()) {
       String value_str = String(reading);
       String value_raw_str = String(raw);
-      client.publish(weight_state_topic, (char *)value_str.c_str());               // Publish weight to the STATE topic
-      client.publish(raw_state_topic, (char *)value_raw_str.c_str());       // Publish raw value to the RAW topic
+      //client.publish(weight_state_topic, (char *)value_str.c_str());               // Publish weight to the STATE topic
+      //client.publish(raw_state_topic, (char *)value_raw_str.c_str());       // Publish raw value to the RAW topic
+      publish_attributes(reading, raw);
     
       client.loop();          // MQTT task loop
     }
@@ -411,11 +406,44 @@ void loop() {
   }
   else {
     // Still execute MQTT loop
-    if (client.connected())
+    if (client.connected()) {
+      if (time_passed >= SCALE_READ_INTERVAL) { // Don't publish attributes any more often than SCALE_READ_INTERVAL to avoid overloading MQTT server
+        publish_attributes(NULL, NULL); // Publish attributes without scale data
+        last_read = millis();
+      }
+      
       client.loop();
+    }
   }
 
 
+}
+
+// Publishes attributes to MQTT server. Set both arguments to NULL if no data avaialble or scale is not available
+void publish_attributes(float weight, float raw) {
+  String attributes = "{ \"ip\": \"";
+  attributes += server->ip();
+  attributes += "\", \"calibration_factor\": ";
+  attributes += String(calibration_factor);
+  attributes += "\", \"Source\": \"";
+  attributes += GITHUB_SOURCE;
+  attributes += "\"";
+
+  if (weight != NULL) {
+    attributes += ", \"weight\": \"";
+    attributes += String(weight);
+    attributes += "\"";
+  }
+
+  if (raw != NULL) {
+    attributes += ", \"raw\": \"";
+    attributes += String(raw);
+    attributes += "\"";
+  }
+
+  attributes += " }";
+
+  client.publish(attributes_topic, (char *)attributes.c_str());
 }
 
 // Callback function for all MQTT subscriptions
@@ -425,16 +453,18 @@ void callback(char* topic, byte* payload, unsigned int length) {
       do_tare = true;
     }
   }
-  else if (strcmp(topic, calibrate_topic_set) == 0) { // Change calibration factor
+  else if (strcmp(topic, calibrate_topic) == 0) { // Change calibration factor
     if (length > 0) {
+      // Convert payload from bytes to char array
       char* c_payload = new char[length+1];
       for (int i = 0 ; i < length ; i++)
         c_payload[i] = (char)payload[i];
 
       c_payload[length] = '\0';
 
+      // Update configuration. New calibration factor will be published on next iteration of main loop
       configuration->set_item("calibration_factor", String(c_payload));
-      configuration->save_configuration(); // New calibration factor will be published on configuration change
+      configuration->save_configuration(); 
     }
   }
   else if (strcmp(topic, restart_topic) == 0) { // Reboot the device
