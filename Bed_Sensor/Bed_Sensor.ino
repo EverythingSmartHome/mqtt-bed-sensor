@@ -100,7 +100,7 @@ void connectMqtt() {
 
         // Publish status 
         client.publish(availability_topic, "online", true);         // Once connected, publish online to the availability topic
-        publish_attributes(NULL, NULL);
+        publish_attributes(-1, -1);
 
         if (strlen(tare_topic) > 0)
           client.subscribe(tare_topic);       //Subscribe to tare topic for remote tare
@@ -174,9 +174,7 @@ void publish_config() {
   config_message += AVAILABILITY_SUFFIX;
   config_message += "\", \"stat_t\": \"~/";
   config_message += ATTRIBUTES_SUFFIX;
-  config_message += "\", \"json_attr_t\": \"~/";
-  config_message += ATTRIBUTES_SUFFIX;
-  config_message += "\", \"val_tpl:\": \"'{{ value_json.weight }}'\', \"unit_of_measurement\": \"kg\", \"icon\": \"mdi:scale\", \"entity_category\": \"diagnostic\" }";  
+  config_message += "\", \"val_tpl\": \"{{ value_json.weight }}\", \"unit_of_measurement\": \"kg\", \"icon\": \"mdi:scale\", \"entity_category\": \"diagnostic\" }";  
   
   result = client.publish(base_config_topic.c_str(), config_message.c_str(), true);         // Once connected, publish online to the availability topic  
   if (!result) {
@@ -200,9 +198,7 @@ void publish_config() {
   config_message += AVAILABILITY_SUFFIX;
   config_message += "\", \"stat_t\": \"~/";
   config_message += ATTRIBUTES_SUFFIX;
-  config_message += "\", \"json_attr_t\": \"~/";
-  config_message += ATTRIBUTES_SUFFIX;
-  config_message += "\", \"val_tpl\": \"'{{ value_json.raw }}'\", \"icon\": \"mdi:numeric\", \"entity_category\": \"diagnostic\" }";  
+  config_message += "\", \"val_tpl\": \"{{ value_json.raw }}\", \"icon\": \"mdi:numeric\", \"entity_category\": \"diagnostic\" }";  
   
   result = client.publish(base_config_topic.c_str(), config_message.c_str(), true);         // Once connected, publish online to the availability topic  
   if (!result) {
@@ -227,9 +223,7 @@ void publish_config() {
   config_message += AVAILABILITY_SUFFIX;
   config_message += "\", \"stat_t\": \"~/";
   config_message += ATTRIBUTES_SUFFIX;
-  config_message += "\", \"json_attr_t\": \"~/";
-  config_message += ATTRIBUTES_SUFFIX;
-  config_message += "\", \"val_tpl\": \"'{{ value_json.calibration_factor }}'\", \"cmd_t\": \"~/";
+  config_message += "\", \"val_tpl\": \"{{ value_json.calibration_factor }}\", \"cmd_t\": \"~/";
   config_message += CALIBRATE_SUFFIX;
   config_message += "\", \"icon\": \"mdi:wrench\", \"entity_category\": \"config\", \"min\": 0, \"max\": 65535 }";  
   
@@ -387,9 +381,9 @@ void loop() {
     Serial.print("Calibration factor: "); // Prints calibration factor.
     Serial.println(calibration_factor);
   
-    if (reading < 0) {
+    if (reading < 0) 
       reading = 0.00;     //Sets reading to 0 if it is a negative value, sometimes loadcells will drift into slightly negative values
-    }
+
 
     if (client.connected()) {
       String value_str = String(reading);
@@ -408,7 +402,7 @@ void loop() {
     // Still execute MQTT loop
     if (client.connected()) {
       if (time_passed >= SCALE_READ_INTERVAL) { // Don't publish attributes any more often than SCALE_READ_INTERVAL to avoid overloading MQTT server
-        publish_attributes(NULL, NULL); // Publish attributes without scale data
+        publish_attributes(-1, -1); // Publish attributes without scale data
         last_read = millis();
       }
       
@@ -419,26 +413,24 @@ void loop() {
 
 }
 
-// Publishes attributes to MQTT server. Set both arguments to NULL if no data avaialble or scale is not available
+// Publishes attributes to MQTT server. Set both arguments to negative value if no data avaialble or scale is not available
 void publish_attributes(float weight, float raw) {
   String attributes = "{ \"ip\": \"";
   attributes += server->ip();
   attributes += "\", \"calibration_factor\": ";
   attributes += String(calibration_factor);
-  attributes += "\", \"Source\": \"";
+  attributes += ", \"Source\": \"";
   attributes += GITHUB_SOURCE;
   attributes += "\"";
 
-  if (weight != NULL) {
-    attributes += ", \"weight\": \"";
+  if (weight >= 0) {
+    attributes += ", \"weight\": ";
     attributes += String(weight);
-    attributes += "\"";
   }
 
-  if (raw != NULL) {
-    attributes += ", \"raw\": \"";
+  if (raw >= 0) {
+    attributes += ", \"raw\": ";
     attributes += String(raw);
-    attributes += "\"";
   }
 
   attributes += " }";
