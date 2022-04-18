@@ -225,7 +225,7 @@ void publish_config() {
   config_message += ATTRIBUTES_SUFFIX;
   config_message += "\", \"val_tpl\": \"{{ value_json.calibration_factor }}\", \"cmd_t\": \"~/";
   config_message += CALIBRATE_SUFFIX;
-  config_message += "\", \"icon\": \"mdi:wrench\", \"entity_category\": \"config\", \"min\": 0, \"max\": 65535 }";  
+  config_message += "\", \"icon\": \"mdi:wrench\", \"entity_category\": \"config\", \"min\": -65535, \"max\": 65535 }";  
   
   result = client.publish(base_config_topic.c_str(), config_message.c_str(), true);         // Once connected, publish online to the availability topic  
   if (!result) {
