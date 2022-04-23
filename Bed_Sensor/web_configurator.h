@@ -27,7 +27,7 @@
 #define JSON_DOC_SIZE  1024     // Maximum size of JSON document in bytes
 #endif
 
-#define WIFI_MAX_ATTEMPTS       5               // Maximum number of connection attemps to WiFi network before switching to Access Point mode
+#define WIFI_MAX_ATTEMPTS       15               // Maximum number of connection attemps to WiFi network before switching to Access Point mode
 #define AP_SSID                 "MQTT_Scale"    // SSID of the access point when in Access Point mode
 #define AP_PASSWORD             "scalemqtt"     // Password of the access point when in Access Point mode
 
@@ -148,11 +148,16 @@ void WebConfigurator::connect_wifi() {
     // attempt to connect to WiFi network
     while ( (status != WL_CONNECTED) && (attempts < WIFI_MAX_ATTEMPTS))
     {
-      delay(500);
+      delay(1000);
 
       // Connect to WPA/WPA2 network
       status = WiFi.status();
       attempts++;
+
+      Serial.print("Attempt #");
+      Serial.print(attempts);
+      Serial.print(" failed. Status:");
+      Serial.println(status);
     }
 
     ap_mode = (status != WL_CONNECTED);
