@@ -15,7 +15,9 @@ Full guide available [here](https://everythingsmarthome.co.uk/howto/building-a-b
 - [HX711](https://github.com/bogde/HX711) library - available through Arduino IDE library manager
 - [PubSubClient](https://github.com/knolleary/pubsubclient) library - available through Arduino IDE library manager
 - [ESP boards](https://github.com/esp8266/Arduino)
+- [ESP8266 WiFi](https://github.com/esp8266/Arduino/tree/master/libraries/ESP8266WiFi) library - available through Arduino IDE library manager
 - [LittleFS](https://github.com/esp8266/Arduino/tree/master/libraries/LittleFS) library - available through Arduino IDE library manager. Make sure to select the ESP8266 library, not the ESP32.
+- [Vector](https://github.com/janelia-arduino/Vector) library - available through Arduino IDE library manager
 - [WiFiWebServer](https://github.com/khoih-prog/WiFiWebServer) library - available through Arduino IDE library manager
 - [ArduinoJSON](https://arduinojson.org) library - available through Arduino IDE library manager
 
