@@ -1,0 +1,4 @@
+{
+  "mqtt_port": "1883",
+  "calibration_factor": "1000"
+}

@@ -1,0 +1,116 @@
+<html>
+  <head>
+    <title>MQTT Scale Configuration</title>
+
+    <style>
+      body { background-color: #cccccc; font-family: Arial, Helvetica, Sans-Serif; Color: #000088; }
+      h1 { text-align: center; }
+      table { border-style: groove; margin-left: 30%; margin-right: 30%; width: 40% }
+      input { width: 100%; }
+    </style>
+  </head>
+
+  <body>
+    <h1>MQTT Scale Configuration</h1><br>
+    <form method="post" enctype="application/x-www-form-urlencoded" action="/update/">
+      <table>
+        <tr>
+          <td>
+            <h2>Wifi</h2>
+          </td>
+        </tr>
+
+        <tr>
+          <td>
+            <label>SSID</label>
+            <input type="text" name="wifi_ssid" value="@SSID@">
+          </td>
+        </tr>
+
+        <tr>
+          <td>
+            <label>Password</label>
+            <input type="text" name="wifi_password" value="@WIFIPWD@">
+          </td>
+        </tr>      
+
+        <tr>
+          <td>
+            <hr />
+            <h2>MQTT Server</h2>
+          </td>
+        </tr>  
+
+        <tr>
+          <td>
+            <label>Host (IP address or hostname)</label>     
+            <input type="text" name="mqtt_host" value="@MQTTSVR@">
+          </td>
+        </tr>
+
+        <tr>
+          <td>
+            <label>Port</label>
+            <input type="text" name="mqtt_port" value="@MQTTPORT@">
+          </td>
+        </tr>
+
+        <tr>
+          <td>
+            <label>Username</label>
+            <input type="text" name="mqtt_user" value="@MQTTUSR@">
+          </td>
+        </tr>
+
+        <tr>
+          <td>
+            <label>Password</label>
+            <input type="text" name="mqtt_password" value="@MQTTPWD@">
+          </td>
+        </tr>
+
+        <tr>
+          <td>
+            <hr />
+            <h2>Scale parameters</h2>
+          </td>
+        </tr>
+
+        <tr>
+          <td>
+            <label>Device ID</label>
+            <input type="text" name="device_id" value="@SCID@">
+          </td>
+        </tr>
+
+        <tr>
+          <td>
+            <label>Device name</label>
+            <input type="text" name="device_name" value="@SCNAME@">
+          </td>
+        </tr>
+
+        <tr>
+          <td>
+            <label>Base MQTT topic</label>
+            <input type="text" name="base_topic" value="@SCTOPIC@">
+          </td>
+        </tr>
+
+        <tr>
+          <td>
+            <label>Calibration factor</label>
+            <input type="text" name="calibration_factor" value="@SCCALIB@">
+          </td>
+        </tr>
+
+        <tr>
+          <td>
+            <hr />
+            <input type="submit" value="Save">             
+          </td>
+        </tr>
+      </table>
+    </form>
+  </body>
+</html>
