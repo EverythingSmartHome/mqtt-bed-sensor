@@ -1,12 +1,18 @@
+mqtt:
+  sensor:
+    - name: "Bed Raw"
+      state_topic: "home/bedroom/bed/raw"
+      unit_of_measurement: "raw"
+      availability:
+        - topic: "home/bedroom/bed/available"
+    - name: "Bed"
+      icon: mdi:weight
+      state_topic: "home/bedroom/bed"
+      unit_of_measurement: "kg"
+      availability:
+        - topic: "home/bedroom/bed/available"
+
 sensor:  
-  - platform: mqtt
-    name: "Bed"
-    state_topic: "home/bedroom/bed"
-    unit_of_measurement: "kg"
-  - platform: mqtt
-    name: "Bed Raw"
-    state_topic: "home/bedroom/bed/raw"
-    unit_of_measurement: "raw"
   - platform: template
     sensors:
       num_in_master_bed:
