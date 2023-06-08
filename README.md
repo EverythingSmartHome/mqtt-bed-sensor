@@ -31,6 +31,51 @@ This was built specifically with bed occupancy in mind so that automations can b
 3. Observe output on serial monitor, place known weight on scales and ensure read-out is correct.
 4. Once happy, unplug and plug into main power supply and enjoy!
 
+## Using ESPHome insted of MQTT
+<details>
+1. Load an ESPHome sketch onto the ESP and add the following code. Modify the GPIO pins if necessary.
+
+```yaml
+globals:
+  - id: constant_weight
+    type: float
+
+sensor:
+  - platform: hx711
+    name: Bed
+    dout_pin: GPIO2
+    clk_pin: GPIO3
+    update_interval: 2s
+    unit_of_measurement: kg
+    accuracy_decimals: 2
+    icon: mdi:weight
+```
+
+2. Take note of the values you receive when there is no weight on the sensor.
+
+3. Place a known weight on the bed and record the corresponding value.
+
+4. Append the following code to the ESP sketch, replacing the values under `calibrate_linear` with the ones you noted earlier.
+
+```yaml
+    filters:
+      - calibrate_linear:
+          - 1967236 -> 0
+          - 3454600 -> 70.5
+      - max:
+          window_size: 2
+          send_every: 1
+      - lambda: 'return x >= 10.0 ? x : 0;'
+      - delta: 2
+```
+
+5. If the high values in your history bother you, you can remove the sensor from the `vices & Services`ection. After that, navigate to the `Statistics` in the `Developer Tools` and click on `Fix issue` for your sensor. Finally, restart Home Assistant, and the ESP sensor should reappear.
+
+Please note that this code is not perfect, but I like the idea of having all my ESP devices in ESPHome, so I created it.
+
+</details>
+
+
 ## Need help?
 Join the community on discord:
 * [Discord](https://discord.gg/Bgfvy2f)
