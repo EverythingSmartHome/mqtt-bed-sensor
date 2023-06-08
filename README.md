@@ -53,9 +53,9 @@ sensor:
 
 2. Take note of the values you receive when there is no weight on the sensor.
 
-3. Place a known weight on the bed and record the corresponding value.
+3. Place a known weight on the bed and note the value.
 
-4. Append the following code to the ESP sketch, replacing the values under `calibrate_linear` with the ones you noted earlier.
+4. Add the following code to the ESP sketch, replacing the values under `calibrate_linear` with the ones you noted earlier.
 
 ```yaml
     filters:
